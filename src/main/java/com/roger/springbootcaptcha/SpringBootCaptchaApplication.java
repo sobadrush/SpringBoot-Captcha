@@ -10,4 +10,5 @@ public class SpringBootCaptchaApplication {
         SpringApplication.run(SpringBootCaptchaApplication.class, args);
     }
 
+
 }
