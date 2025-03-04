@@ -57,7 +57,13 @@ public class CaptchaImgController {
      */
     @GetMapping(path = "/getVerifyCodeImage222")
     public void getVerifyCodeImage222(HttpServletRequest request, HttpServletResponse response) {
-        response.setContentType("image/jpeg"); // 設定為回傳一個 jpg 檔案
+        response.setDateHeader("Expires", 0);// 禁止 Server 端緩存
+        // 設置標準的 HTTP/1.1 no-cache headers.
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        // 設置IE擴展 HTTP/1.1 no-cache headers (use addHeader).
+        response.addHeader("Cache-Control", "post-check=0, pre-check=0");
+        response.setHeader("Pragma", "no-cache");// 設置標準 HTTP/1.0 不緩存圖片
+        response.setContentType("image/jpeg");// 返回一個 jpeg 圖片，默認是 text/html (輸出文檔的 MIMI 類型)
 
         // 確保驗證碼文字有效
         String capText = verifyCodeProducer.createText();
