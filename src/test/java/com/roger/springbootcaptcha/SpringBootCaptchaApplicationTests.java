@@ -7,10 +7,14 @@ import nl.captcha.audio.Sample;
 import nl.captcha.backgrounds.FlatColorBackgroundProducer;
 import nl.captcha.text.producer.NumbersAnswerProducer;
 import nl.captcha.text.renderer.WordRenderer;
+import org.apache.commons.lang3.time.StopWatch;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioFileFormat;
@@ -27,8 +31,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class SpringBootCaptchaApplicationTests {
+
+    private final StopWatch stopWatch = new StopWatch();
+
+    @BeforeEach
+    void setUp() {
+        stopWatch.start();
+    }
+
+    @AfterEach
+    void tearDown() {
+        stopWatch.stop();
+        System.out.println("Time elapsed: " + stopWatch.getTime() + " ms");
+    }
 
     @Test
     @Disabled
