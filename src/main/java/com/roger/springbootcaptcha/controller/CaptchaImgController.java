@@ -1,20 +1,21 @@
 package com.roger.springbootcaptcha.controller;
 
-import com.google.code.kaptcha.Constants;
-import com.google.code.kaptcha.impl.DefaultKaptcha;
-import com.roger.springbootcaptcha.core.CustomWordRenderer;
+import com.roger.springbootcaptcha.core.NumberTextProducer;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
+import nl.captcha.Captcha;
+import nl.captcha.audio.AudioCaptcha;
+import nl.captcha.audio.Sample;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioSystem;
+import java.io.IOException;
 
 /**
  * @author RogerLo
@@ -22,68 +23,58 @@ import java.awt.image.BufferedImage;
  */
 @Controller
 @RequestMapping("/captcha")
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 public class CaptchaImgController {
 
-    private final DefaultKaptcha verifyCodeProducer;
-    private final CustomWordRenderer customWordRenderer;
+    @GetMapping(path = "/getVerifyCode")
+    public void captcha(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        // 設定圖片內容類型
+        response.setContentType("image/png");
 
-    /**
-     * 使用 Google Kaptcha 產生驗證碼圖片
-     */
-    @GetMapping(path = "/getVerifyCodeImage")
-    public void getVerifyCodeImage(HttpServletRequest request, HttpServletResponse response) {
-        response.setContentType("image/jpeg"); // 設定為回傳一個 jpg 檔案
-        String capText = verifyCodeProducer.createText(); // 建立驗證碼文字
-        BufferedImage bi = verifyCodeProducer.createImage(capText);// 使用驗證碼文字建立驗證碼圖片
+        // 生成圖形驗證碼，這裡的寬和高可以根據需求調整
+        Captcha captcha = new Captcha.Builder(200, 50)
+                .addText()  // 添加文字
+                .addNoise() // 添加雜訊
+                .addBackground() // 添加背景
+                .build();
 
-        HttpSession session = request.getSession();
-        session.setAttribute(Constants.KAPTCHA_SESSION_KEY, capText);
-
-        ServletOutputStream out = null;
-        try {
-            out = response.getOutputStream(); // 取得 ServletOutputStream 實例
-            ImageIO.write(bi, "jpg", out); // 輸出圖片
-            out.flush();  // 強制請求清空緩存區
-        } catch (Exception e) {
-            System.out.println(e);
-        } finally {
-            IOUtils.closeQuietly(out);
-        }
-    }
-
-    /**
-     * 自訂驗證碼圖片
-     */
-    @GetMapping(path = "/getVerifyCodeImage222")
-    public void getVerifyCodeImage222(HttpServletRequest request, HttpServletResponse response) {
-        response.setDateHeader("Expires", 0);// 禁止 Server 端緩存
-        // 設置標準的 HTTP/1.1 no-cache headers.
-        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-        // 設置IE擴展 HTTP/1.1 no-cache headers (use addHeader).
-        response.addHeader("Cache-Control", "post-check=0, pre-check=0");
-        response.setHeader("Pragma", "no-cache");// 設置標準 HTTP/1.0 不緩存圖片
-        response.setContentType("image/jpeg");// 返回一個 jpeg 圖片，默認是 text/html (輸出文檔的 MIMI 類型)
-
-        // 確保驗證碼文字有效
-        String capText = verifyCodeProducer.createText();
-        System.out.println("驗證碼內容：" + capText);
-
-        HttpSession session = request.getSession();
-        session.setAttribute(Constants.KAPTCHA_SESSION_KEY, capText);
-
-        // 確保圖片大小合理
-        BufferedImage buffImg = customWordRenderer.renderWord(capText, 200, 70);
-
+        // 輸出圖片
         ServletOutputStream out = null;
         try {
             out = response.getOutputStream();
-            ImageIO.write(buffImg, "jpg", out);
+            ImageIO.write(captcha.getImage(), "jpg", out);
             out.flush();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             IOUtils.closeQuietly(out);
+        }
+    }
+
+
+    /**
+     * 參考資料：https://blog.csdn.net/qq_37622244/article/details/107381899
+     */
+    @GetMapping(path = "/getVerifyCodeAudio")
+    public void getVerifyCodeImage(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate"); // 設置標準的 HTTP/1.1 no-cache headers.
+        response.setHeader("Pragma", "no-cache"); // 設置標準 HTTP/1.0 不緩存圖片
+        response.setDateHeader("Expires", 0); // 禁止 Server 端緩存
+        response.setContentType("audio/mpeg"); // 設定回應的內容類型為 audio/mpeg
+
+        // 1️⃣ 生成 4 位數字驗證碼
+        AudioCaptcha audioCaptcha = new AudioCaptcha.Builder()
+                .addAnswer(new NumberTextProducer(4, "0123456789")) // 設定只使用數字且長度為4
+                .addVoice()
+                .addNoise()
+                .build();
+
+        System.out.println(">>> answer = " + audioCaptcha.getAnswer());
+
+        Sample challenge = audioCaptcha.getChallenge();
+        // 透過 ServletOutputStream 輸出音訊
+        try (ServletOutputStream out = response.getOutputStream()) {
+            AudioSystem.write(challenge.getAudioInputStream(), AudioFileFormat.Type.WAVE, out);
         }
     }
 
