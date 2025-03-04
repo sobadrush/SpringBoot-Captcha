@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
 /**
  * @author RogerLo
@@ -26,7 +23,7 @@ import java.io.IOException;
 @Controller
 @RequestMapping("/captcha")
 @RequiredArgsConstructor
-public class CapchaImgController {
+public class CaptchaImgController {
 
     private final DefaultKaptcha verifyCodeProducer;
     private final CustomWordRenderer customWordRenderer;
